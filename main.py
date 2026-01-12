@@ -43,30 +43,39 @@ class LogicGate:
 class CircuitSimulator:
     def __init__(self, root):
         self.root = root
-        self.root.title("Симулятор логических схем")
+        self.root.title("Симулятор логических элементов")
         self.root.geometry("1200x700")
         
-        # Розовая цветовая палитра
+        # Серо-белая цветовая палитра
         self.colors = {
-            'bg_main': '#FFF0F5',
-            'bg_sidebar': '#FFE4E1',
-            'btn_normal': '#FFB6C1',
-            'btn_hover': '#FF69B4',
-            'btn_text': '#8B008B',
+            'bg_main': '#FFFFFF',
+            'bg_sidebar': '#F5F5F5',
+            'bg_header': '#2C3E50',
+            'btn_normal': '#E0E0E0',
+            'btn_hover': '#BDBDBD',
+            'btn_active': '#9E9E9E',
+            'btn_text': '#212121',
+            'btn_special': '#607D8B',
+            'btn_special_hover': '#455A64',
+            'btn_special_text': '#FFFFFF',
             'canvas_bg': '#FFFFFF',
-            'gate_and': '#FFC0CB',
-            'gate_or': '#FFB7C5',
-            'gate_not': '#FFA7BA',
-            'gate_nand': '#FF9EB5',
-            'gate_nor': '#FF8DA1',
-            'gate_xor': '#FF7F93',
-            'gate_input': '#FFE4EC',
-            'gate_output': '#FFD9E6',
-            'text': '#C71585',
-            'connection': '#DB7093',
-            'selected': '#FF1493',
-            'input_dot': '#8B008B',
-            'output_dot': '#FF1493',
+            'gate_and': '#E8EAF6',
+            'gate_or': '#E3F2FD',
+            'gate_not': '#F3E5F5',
+            'gate_nand': '#E8F5E8',
+            'gate_nor': '#FFF3E0',
+            'gate_xor': '#FCE4EC',
+            'gate_input': '#F5F5F5',
+            'gate_output': '#EEEEEE',
+            'text': '#37474F',
+            'text_light': '#78909C',
+            'text_dark': '#263238',
+            'connection': '#546E7A',
+            'selected': '#2196F3',
+            'input_dot': '#757575',
+            'output_dot': '#424242',
+            'border': '#CFD8DC',
+            'highlight': '#ECEFF1',
         }
         
         # Настройка стилей
@@ -89,125 +98,175 @@ class CircuitSimulator:
         style = ttk.Style()
         style.theme_use('clam')
         
-        style.configure('Pink.TButton',
+        # Обычные кнопки
+        style.configure('Gray.TButton',
                        background=self.colors['btn_normal'],
                        foreground=self.colors['btn_text'],
-                       font=('Arial', 10, 'bold'),
-                       borderwidth=2,
-                       relief='raised',
-                       padding=8)
+                       font=('Segoe UI', 10),
+                       borderwidth=1,
+                       relief='flat',
+                       padding=10)
         
-        style.map('Pink.TButton',
-                 background=[('active', self.colors['btn_hover'])],
+        style.map('Gray.TButton',
+                 background=[('active', self.colors['btn_hover']),
+                            ('pressed', self.colors['btn_active'])],
                  relief=[('pressed', 'sunken')])
         
+        # Специальные кнопки
+        style.configure('Special.TButton',
+                       background=self.colors['btn_special'],
+                       foreground=self.colors['btn_special_text'],
+                       font=('Segoe UI', 10, 'bold'),
+                       borderwidth=1,
+                       relief='flat',
+                       padding=10)
+        
+        style.map('Special.TButton',
+                 background=[('active', self.colors['btn_special_hover']),
+                            ('pressed', self.colors['btn_active'])])
+        
     def create_widgets(self):
+        # Верхняя панель с названием
+        header_frame = tk.Frame(self.root, height=80, bg=self.colors['bg_header'])
+        header_frame.pack(fill=tk.X)
+        header_frame.pack_propagate(False)
+        
+        # Название по центру
+        title_label = tk.Label(header_frame, 
+                              text="СИМУЛЯТОР ЛОГИЧЕСКИХ ЭЛЕМЕНТОВ",
+                              font=('Segoe UI', 24, 'bold'),
+                              bg=self.colors['bg_header'],
+                              fg='white')
+        title_label.pack(expand=True)
+        
+        subtitle_label = tk.Label(header_frame,
+                                 text="Конструктор цифровых схем с таблицей истинности",
+                                 font=('Segoe UI', 11),
+                                 bg=self.colors['bg_header'],
+                                 fg='#B0BEC5')
+        subtitle_label.pack(pady=(0, 10))
+        
+        # Основной контейнер
+        main_container = tk.Frame(self.root, bg=self.colors['bg_main'])
+        main_container.pack(fill=tk.BOTH, expand=True)
+        
         # Панель инструментов слева
-        left_frame = tk.Frame(self.root, width=220, bg=self.colors['bg_sidebar'])
+        left_frame = tk.Frame(main_container, width=250, bg=self.colors['bg_sidebar'])
         left_frame.pack(side=tk.LEFT, fill=tk.Y)
         left_frame.pack_propagate(False)
         
-        # Заголовок
-        title_frame = tk.Frame(left_frame, bg=self.colors['bg_sidebar'])
-        title_frame.pack(fill=tk.X, pady=(15, 10))
-        
-        tk.Label(title_frame, text="ЛОГИЧЕСКИЕ ВЕНТИЛИ", 
-                font=('Arial', 14, 'bold'), 
-                bg=self.colors['bg_sidebar'],
-                fg=self.colors['text']).pack()
-        
-        # Разделитель
-        ttk.Separator(left_frame, orient='horizontal').pack(fill=tk.X, padx=10, pady=5)
-        
-        # Кнопки для добавления вентилей
-        gates_frame = tk.Frame(left_frame, bg=self.colors['bg_sidebar'])
-        gates_frame.pack(pady=10)
-        
-        gates = ['AND', 'OR', 'NOT', 'NAND', 'NOR', 'XOR', 'INPUT', 'OUTPUT']
-        
-        for gate in gates:
-            btn = tk.Button(gates_frame, text=gate,
-                          font=('Arial', 10, 'bold'),
-                          bg=self.colors['btn_normal'],
-                          fg=self.colors['btn_text'],
-                          activebackground=self.colors['btn_hover'],
-                          activeforeground='white',
-                          relief='raised',
-                          borderwidth=2,
-                          width=18,
-                          height=1,
-                          cursor='hand2',
-                          command=lambda g=gate: self.add_gate(g))
-            btn.pack(pady=3)
-            
-            # Эффект при наведении
-            btn.bind('<Enter>', lambda e, b=btn: b.configure(
-                bg=self.colors['btn_hover']))
-            btn.bind('<Leave>', lambda e, b=btn: b.configure(
-                bg=self.colors['btn_normal']))
-        
-        # Разделитель
-        ttk.Separator(left_frame, orient='horizontal').pack(fill=tk.X, padx=10, pady=10)
-        
-        # Панель управления
-        control_frame = tk.Frame(left_frame, bg=self.colors['bg_sidebar'])
-        control_frame.pack(pady=10)
-        
-        controls = [
-            ('Соединить', self.start_connection),
-            ('Удалить', self.delete_selected),
-            ('Таблица истинности', self.show_truth_table),
-            ('Очистить схему', self.clear_circuit),
-            ('Проверить схему', self.check_circuit)  # Добавлена кнопка проверки
+        # Разделы панели инструментов
+        sections = [
+            ("ЛОГИЧЕСКИЕ ЭЛЕМЕНТЫ", ['AND', 'OR', 'NOT', 'NAND', 'NOR', 'XOR']),
+            ("ИНТЕРФЕЙСНЫЕ ЭЛЕМЕНТЫ", ['INPUT', 'OUTPUT']),
+            ("УПРАВЛЕНИЕ", ['Соединить', 'Удалить', 'Проверить схему', 'Таблица истинности', 'Очистить схему'])
         ]
         
-        for text, command in controls:
-            btn = tk.Button(control_frame, text=text,
-                          font=('Arial', 10, 'bold'),
-                          bg=self.colors['btn_normal'],
-                          fg=self.colors['btn_text'],
-                          activebackground=self.colors['btn_hover'],
-                          activeforeground='white',
-                          relief='raised',
-                          borderwidth=2,
-                          width=18,
-                          height=1,
-                          cursor='hand2',
-                          command=command)
-            btn.pack(pady=3)
+        for section_title, items in sections:
+            # Заголовок раздела
+            section_frame = tk.Frame(left_frame, bg=self.colors['bg_sidebar'])
+            section_frame.pack(fill=tk.X, padx=15, pady=(15, 5))
             
-            # Эффект при наведении
-            btn.bind('<Enter>', lambda e, b=btn: b.configure(
-                bg=self.colors['btn_hover']))
-            btn.bind('<Leave>', lambda e, b=btn: b.configure(
-                bg=self.colors['btn_normal']))
-        
-        # Информационная панель
-        info_frame = tk.Frame(left_frame, bg=self.colors['bg_sidebar'])
-        info_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
-        
-        tk.Label(info_frame, text="Инструкция:", 
-                font=('Arial', 10, 'bold'),
-                bg=self.colors['bg_sidebar'],
-                fg=self.colors['text']).pack(anchor='w', padx=10, pady=(0, 5))
-        
-        instructions = [
-            "1. Добавьте вентили",
-            "2. Соедините их",
-            "3. Нажмите 'Таблица истинности'"
-        ]
-        
-        for instr in instructions:
-            tk.Label(info_frame, text=instr,
-                    font=('Arial', 9),
+            tk.Label(section_frame, text=section_title,
+                    font=('Segoe UI', 9, 'bold'),
                     bg=self.colors['bg_sidebar'],
-                    fg=self.colors['text']).pack(anchor='w', padx=20)
+                    fg=self.colors['text_dark'],
+                    anchor='w').pack(fill=tk.X)
+            
+            # Разделитель
+            ttk.Separator(section_frame, orient='horizontal').pack(fill=tk.X, pady=3)
+            
+            # Кнопки раздела
+            for item in items:
+                if item in ['INPUT', 'OUTPUT', 'AND', 'OR', 'NOT', 'NAND', 'NOR', 'XOR']:
+                    # Кнопки элементов
+                    btn = tk.Button(section_frame, text=item,
+                                  font=('Segoe UI', 10),
+                                  bg=self.colors['btn_normal'],
+                                  fg=self.colors['btn_text'],
+                                  activebackground=self.colors['btn_hover'],
+                                  activeforeground=self.colors['btn_text'],
+                                  relief='flat',
+                                  borderwidth=1,
+                                  height=1,
+                                  cursor='hand2',
+                                  command=lambda i=item: self.add_gate(i))
+                    btn.pack(fill=tk.X, pady=2, padx=5)
+                    
+                    # Эффект при наведении
+                    btn.bind('<Enter>', lambda e, b=btn: b.configure(
+                        bg=self.colors['btn_hover']))
+                    btn.bind('<Leave>', lambda e, b=btn: b.configure(
+                        bg=self.colors['btn_normal']))
+                else:
+                    # Кнопки управления
+                    special_commands = {
+                        'Соединить': self.start_connection,
+                        'Удалить': self.delete_selected,
+                        'Проверить схему': self.check_circuit,
+                        'Таблица истинности': self.show_truth_table,
+                        'Очистить схему': self.clear_circuit
+                    }
+                    
+                    btn = tk.Button(section_frame, text=item,
+                                  font=('Segoe UI', 10, 'bold'),
+                                  bg=self.colors['btn_special'],
+                                  fg=self.colors['btn_special_text'],
+                                  activebackground=self.colors['btn_special_hover'],
+                                  activeforeground='white',
+                                  relief='flat',
+                                  borderwidth=0,
+                                  height=1,
+                                  cursor='hand2',
+                                  command=special_commands[item])
+                    btn.pack(fill=tk.X, pady=3, padx=5)
+                    
+                    # Эффект при наведении
+                    btn.bind('<Enter>', lambda e, b=btn: b.configure(
+                        bg=self.colors['btn_special_hover']))
+                    btn.bind('<Leave>', lambda e, b=btn: b.configure(
+                        bg=self.colors['btn_special']))
+        
+        # Статусная панель внизу
+        status_frame = tk.Frame(left_frame, bg=self.colors['bg_sidebar'], height=120)
+        status_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=15, pady=15)
+        status_frame.pack_propagate(False)
+        
+        tk.Label(status_frame, text="Статус схемы:",
+                font=('Segoe UI', 9, 'bold'),
+                bg=self.colors['bg_sidebar'],
+                fg=self.colors['text_dark'],
+                anchor='w').pack(fill=tk.X, pady=(0, 5))
+        
+        self.status_label = tk.Label(status_frame, text="Готов к работе",
+                                    font=('Segoe UI', 9),
+                                    bg=self.colors['bg_sidebar'],
+                                    fg=self.colors['text_light'],
+                                    anchor='w',
+                                    justify=tk.LEFT,
+                                    wraplength=220)
+        self.status_label.pack(fill=tk.X)
+        
+        # Информация о схеме
+        info_frame = tk.Frame(status_frame, bg=self.colors['bg_sidebar'])
+        info_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        self.info_label = tk.Label(info_frame, text="Элементов: 0\nСоединений: 0",
+                                  font=('Segoe UI', 8),
+                                  bg=self.colors['bg_sidebar'],
+                                  fg=self.colors['text_light'],
+                                  anchor='w',
+                                  justify=tk.LEFT)
+        self.info_label.pack(fill=tk.X)
         
         # Область рисования схемы
-        self.canvas = tk.Canvas(self.root, bg=self.colors['canvas_bg'], 
-                               highlightthickness=2,
-                               highlightbackground=self.colors['text'])
+        self.canvas = tk.Canvas(main_container, bg=self.colors['canvas_bg'], 
+                               highlightthickness=1,
+                               highlightbackground=self.colors['border'])
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Сетка на холсте
+        self.draw_grid()
         
         # Привязка событий мыши
         self.canvas.bind("<Button-1>", self.canvas_click)
@@ -223,12 +282,32 @@ class CircuitSimulator:
         self.gate_counter = {'AND': 1, 'OR': 1, 'NOT': 1, 'NAND': 1,
                             'NOR': 1, 'XOR': 1, 'INPUT': 1, 'OUTPUT': 1}
     
+    def draw_grid(self):
+        """Отрисовка сетки на холсте"""
+        width = self.canvas.winfo_width()
+        height = self.canvas.winfo_height()
+        
+        if width > 1 and height > 1:
+            self.canvas.delete('grid')
+            
+            # Рисуем вертикальные линии
+            for x in range(0, width, 20):
+                self.canvas.create_line(x, 0, x, height, 
+                                       fill=self.colors['highlight'], 
+                                       tags='grid', width=0.5)
+            
+            # Рисуем горизонтальные линии
+            for y in range(0, height, 20):
+                self.canvas.create_line(0, y, width, y, 
+                                       fill=self.colors['highlight'], 
+                                       tags='grid', width=0.5)
+    
     def add_gate(self, gate_type):
         """Добавление нового вентиля на схему"""
         name = f"{gate_type}{self.gate_counter[gate_type]}"
         self.gate_counter[gate_type] += 1
         
-        gate = LogicGate(gate_type, name, (100, 100))
+        gate = LogicGate(gate_type, name, (200, 200))
         self.gates[name] = gate
         
         if gate_type == 'INPUT':
@@ -238,6 +317,8 @@ class CircuitSimulator:
             self.output_gates[name] = gate
         
         self.draw_gate(gate)
+        self.update_status(f"Добавлен элемент: {name}")
+        self.update_info()
     
     def draw_gate(self, gate):
         """Отрисовка вентиля на холсте"""
@@ -257,17 +338,17 @@ class CircuitSimulator:
         
         color = gate_colors.get(gate.gate_type, self.colors['btn_normal'])
         
-        # Рисуем прямоугольник для вентиля
+        # Рисуем прямоугольник для вентиля с тенью
         gate.rect = self.canvas.create_rectangle(x-45, y-25, x+45, y+25,
                                                 fill=color, 
-                                                outline=self.colors['text'],
-                                                width=2, 
+                                                outline=self.colors['border'],
+                                                width=1, 
                                                 tags=('gate', gate.name))
         
         # Подписываем вентиль
         self.canvas.create_text(x, y, text=gate.name, 
-                               font=('Arial', 10, 'bold'),
-                               fill=self.colors['text'],
+                               font=('Segoe UI', 9, 'bold'),
+                               fill=self.colors['text_dark'],
                                tags=('gate', gate.name))
         
         # Рисуем входы и выходы только для INPUT и OUTPUT
@@ -275,11 +356,15 @@ class CircuitSimulator:
             # Только выход для входного вентиля (справа)
             gate.output_point = self.canvas.create_oval(x+35, y-5, x+45, y+5,
                                                        fill=self.colors['output_dot'], 
+                                                       outline=self.colors['border'],
+                                                       width=1,
                                                        tags=('gate', gate.name, 'output_point'))
         elif gate.gate_type == 'OUTPUT':
             # Только вход для выходного вентиля (слева)
             gate.input_point = self.canvas.create_oval(x-45, y-5, x-35, y+5,
                                                       fill=self.colors['input_dot'], 
+                                                      outline=self.colors['border'],
+                                                      width=1,
                                                       tags=('gate', gate.name, 'input_point'))
     
     def get_connection_point(self, gate, is_output=False):
@@ -299,6 +384,10 @@ class CircuitSimulator:
         if items:
             tags = self.canvas.gettags(items[0])
             
+            # Игнорируем клик по сетке
+            if 'grid' in tags:
+                return
+            
             # Находим вентиль по тегу
             clicked_gate = None
             for tag in tags:
@@ -310,14 +399,14 @@ class CircuitSimulator:
                 # Снимаем выделение с предыдущего
                 if self.selected_gate and self.selected_gate != clicked_gate:
                     self.canvas.itemconfig(self.selected_gate.rect, 
-                                         outline=self.colors['text'])
+                                         outline=self.colors['border'])
                 
                 self.selected_gate = clicked_gate
                 
                 # Выделяем новый
                 self.canvas.itemconfig(self.selected_gate.rect, 
                                      outline=self.colors['selected'],
-                                     width=3)
+                                     width=2)
                 
                 if self.connecting:
                     if self.connection_start:
@@ -329,13 +418,15 @@ class CircuitSimulator:
                     else:
                         # Начинаем соединение
                         self.connection_start = self.selected_gate
-                        self.update_status(f"Выберите второй вентиль для соединения с {self.selected_gate.name}")
+                        self.update_status(f"Выберите второй элемент для соединения с {self.selected_gate.name}")
+                else:
+                    self.update_status(f"Выбран элемент: {self.selected_gate.name}")
     
     def create_connection(self, gate_from, gate_to):
         """Создание соединения между вентилями"""
         # Проверяем возможность соединения
         if gate_from == gate_to:
-            messagebox.showerror("Ошибка", "Нельзя соединять вентиль с самим собой!")
+            messagebox.showerror("Ошибка", "Нельзя соединять элемент с самим собой!")
             return
         
         # Проверяем, не существует ли уже такое соединение
@@ -365,16 +456,18 @@ class CircuitSimulator:
                                      fill=self.colors['connection'], 
                                      width=2,
                                      arrow=tk.LAST,
+                                     arrowshape=(8, 10, 3),
                                      tags=('connection',
                                            f"{gate_from.name}-{gate_to.name}"))
         connection['line_id'] = line
         
-        self.update_status(f"Соединение создано: {gate_from.name} → {gate_to.name}")
+        self.update_status(f"Создано соединение: {gate_from.name} → {gate_to.name}")
+        self.update_info()
     
     def start_connection(self):
         """Начало процесса соединения"""
         self.connecting = True
-        self.update_status("Выберите первый вентиль для соединения")
+        self.update_status("Выберите первый элемент для соединения")
     
     def drag_gate(self, event):
         """Перетаскивание вентиля"""
@@ -435,12 +528,14 @@ class CircuitSimulator:
             
             del self.gates[self.selected_gate.name]
             self.selected_gate = None
-            self.update_status("Вентиль удален")
+            self.update_status("Элемент удален")
+            self.update_info()
     
     def clear_circuit(self):
         """Очистка всей схемы"""
-        if messagebox.askyesno("Очистка", "Удалить всю схему?"):
+        if messagebox.askyesno("Очистка схемы", "Удалить всю схему?"):
             self.canvas.delete('all')
+            self.draw_grid()  # Перерисовываем сетку
             self.gates.clear()
             self.connections.clear()
             self.input_gates.clear()
@@ -451,6 +546,7 @@ class CircuitSimulator:
             self.gate_counter = {'AND': 1, 'OR': 1, 'NOT': 1, 'NAND': 1,
                                'NOR': 1, 'XOR': 1, 'INPUT': 1, 'OUTPUT': 1}
             self.update_status("Схема очищена")
+            self.update_info()
     
     def check_circuit(self):
         """Проверка схемы на корректность"""
@@ -458,9 +554,9 @@ class CircuitSimulator:
         
         # Проверяем INPUT вентили
         if not self.input_gates:
-            info.append("❌ Нет входных вентилей (INPUT)")
+            info.append("⚠️ Нет входных элементов (INPUT)")
         else:
-            info.append(f"✅ Входные вентили: {len(self.input_gates)}")
+            info.append(f"✓ Входные элементы: {len(self.input_gates)}")
             
             # Проверяем соединения INPUT
             for input_name, input_gate in self.input_gates.items():
@@ -470,13 +566,13 @@ class CircuitSimulator:
                         has_output = True
                         break
                 if not has_output:
-                    info.append(f"⚠️ {input_name} никуда не подключен")
+                    info.append(f"  ⚠️ {input_name} не подключен")
         
         # Проверяем OUTPUT вентили
         if not self.output_gates:
-            info.append("❌ Нет выходных вентилей (OUTPUT)")
+            info.append("⚠️ Нет выходных элементов (OUTPUT)")
         else:
-            info.append(f"✅ Выходные вентили: {len(self.output_gates)}")
+            info.append(f"✓ Выходные элементы: {len(self.output_gates)}")
             
             # Проверяем соединения OUTPUT
             for output_name, output_gate in self.output_gates.items():
@@ -486,49 +582,39 @@ class CircuitSimulator:
                         has_input = True
                         break
                 if not has_input:
-                    info.append(f"⚠️ {output_name} ни к чему не подключен")
+                    info.append(f"  ⚠️ {output_name} не подключен")
         
         # Проверяем соединения
         if not self.connections:
-            info.append("❌ Нет соединений между вентилями")
+            info.append("⚠️ Нет соединений между элементами")
         else:
-            info.append(f"✅ Соединений: {len(self.connections)}")
-        
-        # Проверяем логические вентили
-        logic_gates = [g for g in self.gates.values() if g.gate_type not in ['INPUT', 'OUTPUT']]
-        if logic_gates:
-            info.append(f"✅ Логические вентили: {len(logic_gates)}")
-            
-            # Проверяем соединения логических вентилей
-            for gate in logic_gates:
-                # Проверяем входы
-                if not gate.inputs:
-                    info.append(f"⚠️ {gate.name} не имеет входов")
-                else:
-                    info.append(f"✅ {gate.name} имеет {len(gate.inputs)} вход(ов)")
-                
-                # Проверяем выходы
-                has_output = False
-                for conn in self.connections:
-                    if conn['from'] == gate.name:
-                        has_output = True
-                        break
-                if not has_output and gate.gate_type != 'NOT':  # NOT может быть без выхода
-                    info.append(f"⚠️ {gate.name} не имеет выходов")
+            info.append(f"✓ Соединений: {len(self.connections)}")
         
         # Показываем информацию
         message = "\n".join(info)
         messagebox.showinfo("Проверка схемы", message)
+        self.update_status("Проверка схемы завершена")
     
     def update_status(self, message):
         """Обновление статусного сообщения"""
-        self.root.title(f"Симулятор логических схем - {message}")
+        self.status_label.config(text=message)
+    
+    def update_info(self):
+        """Обновление информации о схеме"""
+        elements_count = len(self.gates)
+        connections_count = len(self.connections)
+        inputs_count = len(self.input_gates)
+        outputs_count = len(self.output_gates)
+        
+        info_text = f"Элементов: {elements_count}\n"
+        info_text += f"Соединений: {connections_count}\n"
+        info_text += f"Входов: {inputs_count}\n"
+        info_text += f"Выходов: {outputs_count}"
+        
+        self.info_label.config(text=info_text)
     
     def simulate_circuit(self, input_values):
         """Моделирование схемы для заданных входных значений"""
-        # Отладочная информация
-        print(f"\n=== Начало симуляции с входными значениями: {input_values} ===")
-        
         # Сбрасываем все выходы
         for gate in self.gates.values():
             gate.output = None
@@ -539,10 +625,8 @@ class CircuitSimulator:
         for i, (input_name, input_gate) in enumerate(input_list):
             if i < len(input_values):
                 input_gate.output = input_values[i]
-                print(f"  INPUT {input_name} = {input_gate.output}")
             else:
                 input_gate.output = False
-                print(f"  INPUT {input_name} = {input_gate.output} (по умолчанию)")
         
         # 2. Топологическая сортировка для правильного порядка вычислений
         def get_sorted_gates():
@@ -586,18 +670,13 @@ class CircuitSimulator:
                         break
                 
                 if all_inputs_known and gate.output is None:
-                    old_output = gate.output
                     gate.compute()
-                    print(f"  {gate.name} ({gate.gate_type}) входы={gate.input_values} выход={gate.output}")
-                    if gate.output != old_output:
-                        pass
         
         # 4. Собираем выходные значения
         outputs = []
         for output_name, output_gate in self.output_gates.items():
             if output_gate.output is not None:
                 outputs.append(output_gate.output)
-                print(f"  OUTPUT {output_name} = {output_gate.output} (из самого вентиля)")
             else:
                 # Ищем значение от последнего входного вентиля
                 last_value = False
@@ -607,9 +686,7 @@ class CircuitSimulator:
                         last_value = input_gate.output
                         break
                 outputs.append(last_value)
-                print(f"  OUTPUT {output_name} = {last_value} (от входного вентиля)")
         
-        print(f"=== Конец симуляции. Выходы: {outputs} ===\n")
         return outputs
     
     def show_truth_table(self):
@@ -618,61 +695,86 @@ class CircuitSimulator:
         self.check_circuit()
         
         if not self.input_gates:
-            messagebox.showerror("Ошибка", "Добавьте входные вентили (INPUT)!")
+            messagebox.showerror("Ошибка", "Добавьте входные элементы (INPUT)!")
             return
             
         if not self.output_gates:
-            messagebox.showerror("Ошибка", "Добавьте выходные вентили (OUTPUT)!")
+            messagebox.showerror("Ошибка", "Добавьте выходные элементы (OUTPUT)!")
             return
         
         if not self.connections:
-            messagebox.showwarning("Внимание", "Соедините вентили между собой!")
+            messagebox.showwarning("Внимание", "Соедините элементы между собой!")
             return
         
         # Создаем окно для таблицы
         table_window = tk.Toplevel(self.root)
         table_window.title("Таблица истинности")
-        table_window.geometry("900x500")
+        table_window.geometry("1000x600")
         table_window.configure(bg=self.colors['bg_main'])
         
         # Заголовок
-        header = tk.Frame(table_window, bg=self.colors['bg_main'])
-        header.pack(fill=tk.X, padx=10, pady=(10, 5))
+        header = tk.Frame(table_window, bg=self.colors['bg_header'])
+        header.pack(fill=tk.X, pady=(0, 10))
+        
+        tk.Label(header, text="ТАБЛИЦА ИСТИННОСТИ", 
+                font=('Segoe UI', 18, 'bold'),
+                bg=self.colors['bg_header'],
+                fg='white',
+                pady=15).pack()
+        
+        # Информация о схеме
+        info_frame = tk.Frame(table_window, bg=self.colors['bg_main'])
+        info_frame.pack(fill=tk.X, padx=20, pady=(0, 15))
         
         input_count = len(self.input_gates)
         output_count = len(self.output_gates)
-        tk.Label(header, text=f"Таблица истинности: {input_count} входов, {output_count} выходов", 
-                font=('Arial', 12, 'bold'),
-                bg=self.colors['bg_main'],
-                fg=self.colors['text']).pack()
         
-        # Информация о схеме
-        info_text = f"Схема: {len(self.gates)} вентилей, {len(self.connections)} соединений"
-        tk.Label(header, text=info_text,
-                font=('Arial', 10),
+        tk.Label(info_frame, text=f"Схема содержит {input_count} входов и {output_count} выходов", 
+                font=('Segoe UI', 11),
                 bg=self.colors['bg_main'],
-                fg=self.colors['text']).pack()
+                fg=self.colors['text_dark']).pack(anchor='w')
+        
+        tk.Label(info_frame, text=f"Всего комбинаций: {2**input_count}", 
+                font=('Segoe UI', 10),
+                bg=self.colors['bg_main'],
+                fg=self.colors['text_light']).pack(anchor='w', pady=(2, 0))
         
         # Создаем фрейм для таблицы с прокруткой
-        table_frame = tk.Frame(table_window)
-        table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        table_frame = tk.Frame(table_window, bg=self.colors['bg_main'])
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
         
         # Создаем таблицу
         input_names = list(self.input_gates.keys())
         output_names = list(self.output_gates.keys())
         all_names = input_names + output_names
         
-        # Создаем Treeview
-        tree = ttk.Treeview(table_frame, columns=all_names, show='headings', height=20)
+        # Создаем Treeview с пользовательским стилем
+        style = ttk.Style(table_window)
+        style.configure("Custom.Treeview",
+                       background=self.colors['bg_main'],
+                       foreground=self.colors['text_dark'],
+                       fieldbackground=self.colors['bg_main'],
+                       borderwidth=0,
+                       font=('Segoe UI', 10))
+        
+        style.configure("Custom.Treeview.Heading",
+                       background=self.colors['btn_special'],
+                       foreground='white',
+                       font=('Segoe UI', 10, 'bold'),
+                       borderwidth=0,
+                       relief='flat')
+        
+        tree = ttk.Treeview(table_frame, columns=all_names, show='headings', 
+                           height=20, style="Custom.Treeview")
         
         # Настраиваем заголовки
         for name in input_names:
-            tree.heading(name, text=f"Вход:\n{name}", anchor='center')
-            tree.column(name, width=80, anchor='center')
+            tree.heading(name, text=f"Вход\n{name}", anchor='center')
+            tree.column(name, width=80, anchor='center', minwidth=80)
             
         for name in output_names:
-            tree.heading(name, text=f"Выход:\n{name}", anchor='center')
-            tree.column(name, width=80, anchor='center')
+            tree.heading(name, text=f"Выход\n{name}", anchor='center')
+            tree.column(name, width=80, anchor='center', minwidth=80)
         
         # Генерируем все комбинации входов
         all_combinations = list(itertools.product([False, True], repeat=input_count))
@@ -693,7 +795,7 @@ class CircuitSimulator:
             
             # Подсвечиваем каждую 2-ю строку для читаемости
             if combo_idx % 2 == 1:
-                tree.tag_configure('oddrow', background='#FFF0F5')
+                tree.tag_configure('oddrow', background=self.colors['highlight'])
                 tree.item(tree.get_children()[-1], tags=('oddrow',))
         
         # Добавляем полосы прокрутки
@@ -711,16 +813,17 @@ class CircuitSimulator:
         table_frame.grid_columnconfigure(0, weight=1)
         
         # Кнопка закрытия
-        close_btn = tk.Button(table_window, text="Закрыть таблицу",
-                            font=('Arial', 10, 'bold'),
-                            bg=self.colors['btn_normal'],
-                            fg=self.colors['btn_text'],
-                            activebackground=self.colors['btn_hover'],
+        close_btn = tk.Button(table_window, text="ЗАКРЫТЬ",
+                            font=('Segoe UI', 10, 'bold'),
+                            bg=self.colors['btn_special'],
+                            fg='white',
+                            activebackground=self.colors['btn_special_hover'],
                             activeforeground='white',
-                            relief='raised',
-                            borderwidth=2,
+                            relief='flat',
+                            borderwidth=0,
+                            cursor='hand2',
                             command=table_window.destroy)
-        close_btn.pack(pady=10)
+        close_btn.pack(pady=(0, 20))
 
 def main():
     root = tk.Tk()
